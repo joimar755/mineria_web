@@ -1,6 +1,7 @@
 import datetime
 from sqlalchemy import TIMESTAMP, DateTime, Float, Integer, String, Table, Column, text, true, ForeignKey
 from sqlalchemy.orm import relationship
+from datetime import datetime
 from config.db import Base
 
 class Prediction(Base):
@@ -12,7 +13,7 @@ class Prediction(Base):
     modelo = Column(String(100))  # Linear, RandomForest, Logistic, etc.
     tipo = Column(String(50))     # regresion / clasificacion
     valor = Column(Float)
-    fecha = Column(DateTime, default=datetime.utcnow) 
+    fecha = Column(TIMESTAMP(timezone=True), nullable=False, server_default=text('now()'))
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     
     

@@ -6,15 +6,15 @@ class vhBase(BaseModel):
     vendedor: str
     modelo: str
     tipo: str
-    valor: str
-   
+    valor: float
+    user_id: int  # ✅ Obligatorio si lo usa Prediction
+    fecha: Optional[str] = None  # opcional, si lo necesitas
 
 class vhcreate(vhBase):
- pass
+    pass
 
 class vh(vhBase):
-    id:int 
-    user_id: Optional[int]
+    id: int
 
     class Config:
-        from_attributes = True
+        orm_mode = True

@@ -8,13 +8,14 @@ from config.db import  SessionLocal, get_db
 from passlib.context import CryptContext
 from modelo_prediccion import oauth
 from modelo_prediccion.oauth import get_current_user
-from model_db.db import Vehiculos, Users, Model_Auto, Category, status
+from model_db.db import  Users
 from sqlalchemy.orm import Session
 from model_db import db
-from model_db.db import vhBase, guardar_prediccion_schema
+from modelo_prediccion import predccion_modelo
+from model_db.pred import guardar_prediccion 
 from modelo_prediccion.vendedor_mineria import Item
 
-from modelo_prediccion import predccion_modelo
+from modelo_prediccion.predccion_modelo import vhBase
 from modelo_prediccion.prediccion_user import Login, Token, users
 from modelo_prediccion.token import create_access_token
 import json
@@ -66,7 +67,9 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 @VH.post("/predict/clasificacion")
-def predict_clasificacion(item: Item):
+def predict_clasificacion(item: Item,
+                          db: Session = Depends(get_db),
+    current_user: int = Depends(get_current_user)):
     X_nombre = tfidf.transform([item.nombre])
     X_vendedor = le.transform([item.vendedor])
     X_input = hstack([X_nombre, [[X_vendedor[0]]]])
@@ -82,24 +85,63 @@ def predict_clasificacion(item: Item):
         vendedor=item.vendedor,
         modelo="Logistic Regression",
         tipo="clasificacion",
-        valor=pred_log
+        valor=pred_log,
+        user_id=current_user.id 
     )
-    guardar_prediccion_schema(pred1, db)
+    guardar_prediccion(pred1, db)
 
     pred2 = vhBase(
         nombre=item.nombre,
         vendedor=item.vendedor,
         modelo="Random Forest Classifier",
         tipo="clasificacion",
-        valor=pred_rf
+        valor=pred_rf,
+        user_id=current_user.id 
     )
-    guardar_prediccion_schema(pred2, db)
+    guardar_prediccion(pred2, db)
 
     db.close()
 
     return {
         "logistic_regression": pred_log,
         "random_forest_classifier": pred_rf
+    }
+@VH.post("/predict/regresion")
+def predict_regresion(
+    item: Item,
+    db: Session = Depends(get_db),
+    current_user: Users = Depends(get_current_user)
+):
+    X_nombre = tfidf.transform([item.nombre])
+    X_vendedor = le.transform([item.vendedor])
+    X_input = hstack([X_nombre, [[X_vendedor[0]]]])
+
+    pred_lr = lr.predict(X_input)[0]
+    pred_rf = rf_reg.predict(X_input)[0]
+
+    pred1 = vhBase(
+        nombre=item.nombre,
+        vendedor=item.vendedor,
+        modelo="Linear Regression",
+        tipo="regresion",
+        valor=pred_lr,
+        user_id=current_user.id  # ✅ ahora lo pasas
+    )
+    guardar_prediccion(pred1, db)
+
+    pred2 = vhBase(
+        nombre=item.nombre,
+        vendedor=item.vendedor,
+        modelo="Random Forest Regressor",
+        tipo="regresion",
+        valor=pred_rf,
+        user_id=current_user.id  # ✅ aquí también
+    )
+    guardar_prediccion(pred2, db)
+
+    return {
+        "linear_regression": pred_lr,
+        "random_forest_regressor": pred_rf
     }
 
 
@@ -115,21 +157,6 @@ def index(id: int, db: Session = Depends(get_db),current_user: int = Depends(oau
         raise HTTPException(status_code=401, detail="Unauthorized to users") 
     
     return {"user":vh}
-
-@VH.put("/products/{id}", response_model=m_pro.vhBase)
-def index(id: int, update_vhs: m_pro.vhBase ,current_user: int = Depends(get_current_user), db: Session = Depends(get_db)):
-    vh_query = db.query(Vehiculos).filter(Vehiculos.id == id)
-    post_vh = vh_query.first()
-    if not vh_query.first():
-        raise HTTPException(status_code=404, detail="Product not found")
-    
-    if post_vh.user_id != current_user.id:
-        raise HTTPException(status_code=401, detail="Unauthorized to update this product") 
-
-    vh_query.update(update_vhs.model_dump(), synchronize_session=False)
-    db.commit()
-    db.refresh(post_vh)
-    return post_vh
 
 
 @VH.post("/usuario")

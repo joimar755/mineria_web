@@ -8,7 +8,8 @@ def guardar_prediccion(pred_data: predccion_modelo.vhBase, db: Session):
         vendedor=pred_data.vendedor,
         modelo=pred_data.modelo,
         tipo=pred_data.tipo,
-        valor=pred_data.valor
+        valor=pred_data.valor,
+        user_id=pred_data.user_id  # Asegúrate de que user_id esté en vhBase
     )
     db.add(pred)
     db.commit()

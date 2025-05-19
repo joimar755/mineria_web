@@ -9,4 +9,9 @@ python-multipart
 bcrypt
 alembic
 psycopg2-binary
-python-dotenv 
+python-dotenv
+scikit-learn 
+pandas
+numpy
+scipy
+

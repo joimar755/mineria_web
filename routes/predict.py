@@ -144,6 +144,45 @@ def predict_regresion(
         "random_forest_regressor": pred_rf
     }
 
+@VH.get("/metrics")
+def get_metrics():
+    # Regresión
+    pred_lr = lr.predict(X_test_r)
+    pred_rf = rf_reg.predict(X_test_r)
+
+    metrics_reg = {
+        "Linear Regression": {
+            "R2": r2_score(y_test_r, pred_lr),
+            "MAE": mean_absolute_error(y_test_r, pred_lr),
+            "RMSE": np.sqrt(mean_squared_error(y_test_r, pred_lr))
+        },
+        "Random Forest Regressor": {
+            "R2": r2_score(y_test_r, pred_rf),
+            "MAE": mean_absolute_error(y_test_r, pred_rf),
+            "RMSE": np.sqrt(mean_squared_error(y_test_r, pred_rf))
+        }
+    }
+
+    # Clasificación
+    pred_log = log_clf.predict(X_test_c)
+    pred_rf_clf = rf_clf.predict(X_test_c)
+
+    metrics_clf = {
+        "Logistic Regression": {
+            "Accuracy": accuracy_score(y_test_c, pred_log),
+            "F1 Score": f1_score(y_test_c, pred_log)
+        },
+        "Random Forest Classifier": {
+            "Accuracy": accuracy_score(y_test_c, pred_rf_clf),
+            "F1 Score": f1_score(y_test_c, pred_rf_clf)
+        }
+    }
+
+    return {
+        "regresion": metrics_reg,
+        "clasificacion": metrics_clf
+    }
+
 
 
 
